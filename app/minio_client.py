@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 from typing import Any, BinaryIO
 
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError
 
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
@@ -13,16 +14,21 @@ MINIO_PUBLIC_ENDPOINT = os.getenv("MINIO_PUBLIC_ENDPOINT")  # optional: browser-
 MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
 MINIO_BUCKET = os.getenv("MINIO_BUCKET", "ota-bucket")
+MINIO_REGION = os.getenv("MINIO_REGION", "us-east-1")
 
 
 def _client(endpoint_url: str | None = None):
     if not MINIO_ENDPOINT or not MINIO_ACCESS_KEY or not MINIO_SECRET_KEY:
         raise RuntimeError("MinIO configuration missing: set MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY")
+    # Force SigV4 + path-style addressing for MinIO compatibility and stable presigned URLs.
+    cfg = Config(signature_version="s3v4", s3={"addressing_style": "path"})
     return boto3.client(
         "s3",
         endpoint_url=endpoint_url or MINIO_ENDPOINT,
+        region_name=MINIO_REGION,
         aws_access_key_id=MINIO_ACCESS_KEY,
         aws_secret_access_key=MINIO_SECRET_KEY,
+        config=cfg,
     )
 
 

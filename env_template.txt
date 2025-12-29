@@ -1,0 +1,16 @@
+# FastAPI host/port (backend container)
+API_HOST=0.0.0.0
+API_PORT=8000
+
+# Frontend build targets the backend on the host (browser access)
+VITE_API_BASE=http://localhost:8000
+VITE_WS_URL=ws://localhost:8000/ws
+
+# MinIO configuration (required)
+MINIO_ENDPOINT=http://minio:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=ota-artifacts
+
+# CORS origins (comma-separated)
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173

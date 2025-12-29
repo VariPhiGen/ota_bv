@@ -29,7 +29,7 @@ The API uses HTTP Basic auth.
 
 **Default credentials (hardcoded in `central_server/app/auth.py`):**
 - **username**: `admin`
-- **password**: `nextneural@2402`
+- **password**: `FUCKOFF'
 
 > Security note: This is fine for local/testing, but you should change this before any shared deployment.
 

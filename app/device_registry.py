@@ -168,3 +168,48 @@ def set_latest_configuration(
     _save_devices_list(devices)
     return updated_device
 
+
+def set_latest_health(
+    sensor_id: str,
+    *,
+    command_id: str | None,
+    status: str,
+    health: Any | None,
+    device_time: str | None = None,
+    received_at: str | None = None,
+    error: str | None = None,
+) -> Dict[str, Any]:
+    """
+    Store latest health report for a device.
+
+    Saved under device["latest_health"] so the Devices UI can show the latest inline.
+    """
+    if not sensor_id:
+        raise ValueError("sensor_id is required")
+
+    devices = _load_devices_list()
+    now = received_at or _now()
+    updated_device: Dict[str, Any] | None = None
+
+    latest = {
+        "command_id": command_id,
+        "status": status,
+        "received_at": now,
+        "device_time": device_time,
+        "health": health,
+        "error": error,
+    }
+
+    for idx, d in enumerate(devices):
+        if d.get("sensor_id") == sensor_id or d.get("device_id") == sensor_id:
+            updated_device = {**d, "latest_health": latest, "last_seen": _now()}
+            devices[idx] = updated_device
+            break
+
+    if updated_device is None:
+        updated_device = {"sensor_id": sensor_id, "online": True, "last_seen": _now(), "latest_health": latest}
+        devices.append(updated_device)
+
+    _save_devices_list(devices)
+    return updated_device
+

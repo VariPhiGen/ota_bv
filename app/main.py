@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.devices import router as devices_router, root_router as devices_root_router
 from app.api.ota import router as ota_router
 from app.api.upload import router as upload_router
-from app.device_registry import mark_offline, mark_online, register_device, set_latest_configuration
+from app.device_registry import mark_offline, mark_online, register_device, set_latest_configuration, set_latest_health
 from app.websocket_manager import manager
 from app.ota_dispatcher import mark_command_acked, mark_latest_command_acked
 from app.auth import get_admin, security, ADMIN_PASS, ADMIN_USER
@@ -174,6 +174,39 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                 # Broadcast to admin clients so Devices UI updates live.
                 await manager.broadcast(msg, exclude={cfg_sensor})
                 await websocket.send_json({"status": "config_received"})
+
+            elif msg_type == "health":
+                payload = data.get("payload") or {}
+                health_sensor = data.get("sensor_id") or payload.get("sensor_id") or sensor_id
+                if not health_sensor:
+                    await websocket.send_json({"error": "sensor_id missing in health"})
+                    continue
+
+                command_id = data.get("command_id") or payload.get("command_id")
+                status = payload.get("status") or data.get("status") or "unknown"
+                device_time = payload.get("time") or payload.get("timestamp")
+                error = payload.get("error")
+
+                set_latest_health(
+                    health_sensor,
+                    command_id=command_id,
+                    status=status,
+                    health=payload,
+                    device_time=device_time,
+                    received_at=_now(),
+                    error=error,
+                )
+                mark_online(health_sensor)
+
+                msg = {
+                    "type": "health",
+                    "sensor_id": health_sensor,
+                    "command_id": command_id,
+                    "timestamp": _now(),
+                    "payload": payload,
+                }
+                await manager.broadcast(msg, exclude={health_sensor})
+                await websocket.send_json({"status": "health_received"})
 
             elif msg_type == "ping":
                 if sensor_id:

@@ -15,6 +15,7 @@ import {
   Tooltip,
   Descriptions,
   Dropdown,
+  Select,
 } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
 import { getDevices, updateDevice, deleteDevice, sendOta, wsUrl as WS_URL } from "../api";
@@ -24,6 +25,9 @@ const Devices = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filterOffline, setFilterOffline] = useState(false);
+  const [clientFilter, setClientFilter] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [editOpen, setEditOpen] = useState(false);
   const [editRecord, setEditRecord] = useState(null);
   const [editForm] = Form.useForm();
@@ -272,9 +276,29 @@ const Devices = () => {
     }
   };
 
+  const clientOptions = useMemo(() => {
+    const set = new Set();
+    for (const d of devices) {
+      const name = (d?.client_name || "").trim();
+      if (name) set.add(name);
+    }
+    return Array.from(set)
+      .sort((a, b) => a.localeCompare(b))
+      .map((name) => ({ label: name, value: name }));
+  }, [devices]);
+
+  const filtered = useMemo(() => {
+    let list = devices;
+    if (filterOffline) list = list.filter((d) => d.online === false);
+    if (clientFilter?.length) {
+      const allowed = new Set(clientFilter);
+      list = list.filter((d) => allowed.has((d?.client_name || "").trim()));
+    }
+    return list;
+  }, [devices, filterOffline, clientFilter]);
+
   if (loading) return <Spin />;
   if (error) return <Alert type="error" message={error} />;
-  const filtered = filterOffline ? devices.filter((d) => d.online === false) : devices;
   const configStatusColor = (s) => (s === "success" ? "green" : s === "failed" ? "red" : "default");
   const healthStatusColor = (s) => (s === "success" ? "green" : s === "failed" ? "red" : "default");
   const formatIST = (iso) => {
@@ -321,6 +345,13 @@ const Devices = () => {
   };
 
   const columns = [
+    {
+      title: "S.No",
+      key: "sno",
+      width: 70,
+      align: "center",
+      render: (_val, _record, index) => (page - 1) * pageSize + index + 1,
+    },
     { title: "Sensor ID", dataIndex: "sensor_id", key: "sensor_id", ellipsis: true },
     { title: "Client Name", dataIndex: "client_name", key: "client_name", ellipsis: true },
     { title: "Device Name", dataIndex: "device_name", key: "device_name", ellipsis: true },
@@ -478,14 +509,39 @@ const Devices = () => {
   return (
     <>
       <div style={{ marginBottom: 12 }}>
-        <Switch checked={filterOffline} onChange={setFilterOffline} />{" "}
-        <span style={{ marginLeft: 8 }}>Show offline only</span>
+        <Space wrap>
+          <span style={{ fontWeight: 600 }}>Filters:</span>
+          <span>
+            <Switch checked={filterOffline} onChange={setFilterOffline} />{" "}
+            <span style={{ marginLeft: 8 }}>Offline only</span>
+          </span>
+          <Select
+            mode="multiple"
+            allowClear
+            placeholder="Client Name"
+            value={clientFilter}
+            onChange={setClientFilter}
+            options={clientOptions}
+            style={{ minWidth: 260 }}
+            showSearch
+            optionFilterProp="label"
+          />
+        </Space>
       </div>
       <Table
         rowKey={(r) => r.sensor_id || r.device_id}
         columns={columns}
         dataSource={filtered}
-        pagination={{ pageSize: 10 }}
+        pagination={{
+          current: page,
+          pageSize,
+          showSizeChanger: true,
+          pageSizeOptions: [10, 20, 50, 100],
+          onChange: (p, ps) => {
+            setPage(p);
+            setPageSize(ps);
+          },
+        }}
         size="small"
         tableLayout="fixed"
       />

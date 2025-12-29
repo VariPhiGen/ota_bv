@@ -1,0 +1,19 @@
+0 verbose cli /usr/local/bin/node /usr/local/bin/npm
+1 info using npm@11.0.0
+2 info using node@v22.12.0
+3 silly config load:file:/usr/local/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/nitishmishra/Documents/ota/central_server/frontend/.npmrc
+5 silly config load:file:/Users/nitishmishra/.npmrc
+6 silly config load:file:/usr/local/etc/npmrc
+7 verbose title npm install ./.npm-tmp
+8 verbose argv "install" "--cache" "./.npm-cache" "--tmp" "./.npm-tmp" "--no-audit" "--no-fund"
+9 verbose logfile logs-max:10 dir:/Users/nitishmishra/Documents/ota/central_server/frontend/.npm-cache/_logs/2025-12-28T20_45_12_481Z-
+10 verbose logfile /Users/nitishmishra/Documents/ota/central_server/frontend/.npm-cache/_logs/2025-12-28T20_45_12_481Z-debug-0.log
+11 silly logfile done cleaning log files
+12 verbose cwd /Users/nitishmishra/Documents/ota/central_server/frontend
+13 verbose os Darwin 24.5.0
+14 verbose node v22.12.0
+15 verbose npm  v11.0.0
+16 verbose exit 1
+17 verbose code 1
+18 error A complete log of this run can be found in: /Users/nitishmishra/Documents/ota/central_server/frontend/.npm-cache/_logs/2025-12-28T20_45_12_481Z-debug-0.log

@@ -3,11 +3,20 @@ API_HOST=0.0.0.0
 API_PORT=8000
 
 # Frontend build targets the backend on the host (browser access)
+# Local:
 VITE_API_BASE=http://localhost:8000
 VITE_WS_URL=ws://localhost:8000/ws
+# AWS example (replace with your public IP/domain):
+# VITE_API_BASE=http://<PUBLIC_HOST>:8000
+# VITE_WS_URL=ws://<PUBLIC_HOST>:8000/ws
 
 # MinIO configuration (required)
 MINIO_ENDPOINT=http://minio:9000
+# Public/edge-reachable MinIO endpoint (IP/domain reachable from devices)
+# Local:
+MINIO_PUBLIC_ENDPOINT=http://localhost:9000
+# AWS example:
+# MINIO_PUBLIC_ENDPOINT=http://<PUBLIC_HOST>:9000
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
 MINIO_BUCKET=ota-artifacts

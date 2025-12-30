@@ -44,23 +44,31 @@ def register_device(payload: Dict[str, Any]) -> Dict[str, Any]:
       - device_name (str)
       - sensor_name (str)
     """
-    sensor_id = payload.get("sensor_id")
-    if not sensor_id:
-        raise ValueError("sensor_id is required for registration")
+    # Prefer device_id as the primary unique key (WebSocket connection key / registry key).
+    # Fall back to sensor_id for backward compatibility.
+    device_id = payload.get("device_id") or payload.get("sensor_id")
+    if not device_id:
+        raise ValueError("device_id (or sensor_id) is required for registration")
+
+    sensor_id = payload.get("sensor_id") or device_id
 
     devices = _load_devices_list()
     now = _now()
 
     existing = None
     for d in devices:
-        if d.get("sensor_id") == sensor_id or d.get("device_id") == payload.get("device_id"):
+        # Primary key: sensor_id
+        if d.get("device_id") == device_id:
+            existing = d
+            break
+        # Backward compatibility: if older entries don't have device_id, match by sensor_id
+        if not d.get("device_id") and d.get("sensor_id") == sensor_id:
             existing = d
             break
 
     device_info: Dict[str, Any] = existing.copy() if existing else {}
     device_info["sensor_id"] = sensor_id
-    if payload.get("device_id"):
-        device_info["device_id"] = payload["device_id"]
+    device_info["device_id"] = device_id
 
     # Preserve existing names unless new non-empty values provided
     if payload.get("client_name") not in (None, ""):

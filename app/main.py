@@ -90,7 +90,7 @@ def register_device_minio(payload: Dict[str, Any], auth: bool = Depends(get_admi
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket) -> None:
-    sensor_id: str | None = None
+    device_key: str | None = None
     await websocket.accept()
 
     try:
@@ -100,19 +100,22 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
 
             if msg_type == "register":
                 device = register_device(data)
-                sensor_id = device["sensor_id"]
-                await manager.connect(sensor_id, websocket)
-                mark_online(sensor_id)
+                device_key = device.get("device_id") or device.get("sensor_id")
+                if not device_key:
+                    await websocket.send_json({"error": "device_id missing in register"})
+                    continue
+                await manager.connect(device_key, websocket)
+                mark_online(device_key)
                 # Broadcast device status to admin clients
                 await manager.broadcast(
-                    {"type": "device_status", "sensor_id": sensor_id, "online": True, "device": device, "timestamp": _now()},
-                    exclude={sensor_id},
+                    {"type": "device_status", "sensor_id": device.get("sensor_id") or device_key, "online": True, "device": device, "timestamp": _now()},
+                    exclude={device_key},
                 )
-                await websocket.send_json({"status": "registered", "sensor_id": sensor_id})
+                await websocket.send_json({"status": "registered", "device_id": device_key, "sensor_id": device.get("sensor_id")})
 
             elif msg_type == "ack":
                 payload = data.get("payload") or {}
-                ack_sensor = data.get("sensor_id") or payload.get("sensor_id") or sensor_id
+                ack_sensor = data.get("sensor_id") or payload.get("sensor_id") or device_key
                 if not ack_sensor:
                     await websocket.send_json({"error": "sensor_id missing in ack"})
                     continue
@@ -142,7 +145,7 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
 
             elif msg_type == "config":
                 payload = data.get("payload") or {}
-                cfg_sensor = data.get("sensor_id") or payload.get("sensor_id") or sensor_id
+                cfg_sensor = data.get("sensor_id") or payload.get("sensor_id") or device_key
                 if not cfg_sensor:
                     await websocket.send_json({"error": "sensor_id missing in config"})
                     continue
@@ -177,7 +180,7 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
 
             elif msg_type == "health":
                 payload = data.get("payload") or {}
-                health_sensor = data.get("sensor_id") or payload.get("sensor_id") or sensor_id
+                health_sensor = data.get("sensor_id") or payload.get("sensor_id") or device_key
                 if not health_sensor:
                     await websocket.send_json({"error": "sensor_id missing in health"})
                     continue
@@ -209,26 +212,26 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                 await websocket.send_json({"status": "health_received"})
 
             elif msg_type == "ping":
-                if sensor_id:
-                    mark_online(sensor_id)
+                if device_key:
+                    mark_online(device_key)
                 await websocket.send_json({"type": "pong"})
 
             else:
                 await websocket.send_json({"error": "unknown_message_type"})
 
     except WebSocketDisconnect:
-        if sensor_id:
-            manager.disconnect(sensor_id)
-            offline = mark_offline(sensor_id)
+        if device_key:
+            manager.disconnect(device_key)
+            offline = mark_offline(device_key)
             # Broadcast offline status to admin clients
             await manager.broadcast(
-                {"type": "device_status", "sensor_id": sensor_id, "online": False, "device": offline, "timestamp": _now()},
-                exclude={sensor_id},
+                {"type": "device_status", "sensor_id": device_key, "online": False, "device": offline, "timestamp": _now()},
+                exclude={device_key},
             )
     except Exception:
         # Ensure cleanup on unexpected exceptions
-        if sensor_id:
-            manager.disconnect(sensor_id)
-            mark_offline(sensor_id)
+        if device_key:
+            manager.disconnect(device_key)
+            mark_offline(device_key)
         raise
 

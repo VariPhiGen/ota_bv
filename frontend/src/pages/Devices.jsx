@@ -220,7 +220,7 @@ const Devices = () => {
 
   const onGetConfig = async (record) => {
     try {
-      const sid = record.sensor_id || record.device_id;
+      const sid = record.device_id || record.sensor_id;
       if (!sid) return;
       // Set pending immediately to avoid race where WS response arrives before /send-command returns.
       setPendingConfig((prev) => ({ ...prev, [sid]: { command_id: prev?.[sid]?.command_id, started_at: Date.now() } }));
@@ -239,7 +239,7 @@ const Devices = () => {
 
   const onHealthCheck = async (record) => {
     try {
-      const sid = record.sensor_id || record.device_id;
+      const sid = record.device_id || record.sensor_id;
       if (!sid) return;
       // Set pending immediately to avoid race where WS response arrives before /send-command returns.
       setPendingHealth((prev) => ({ ...prev, [sid]: { command_id: prev?.[sid]?.command_id, started_at: Date.now() } }));
@@ -529,7 +529,7 @@ const Devices = () => {
         </Space>
       </div>
       <Table
-        rowKey={(r) => r.sensor_id || r.device_id}
+        rowKey={(r) => r.device_id || r.sensor_id}
         columns={columns}
         dataSource={filtered}
         pagination={{

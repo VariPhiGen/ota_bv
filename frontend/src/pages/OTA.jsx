@@ -224,7 +224,7 @@ const OTA = () => {
               mode="multiple"
               placeholder="Select devices"
               options={devices.map((d) => ({
-                value: d.sensor_id || d.device_id,
+                value: d.device_id || d.sensor_id,
                 label: d.device_name || d.sensor_name || d.sensor_id || d.device_id,
               }))}
               showSearch
